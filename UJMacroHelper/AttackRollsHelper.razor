@@ -1,0 +1,213 @@
+﻿@using System.Diagnostics.CodeAnalysis
+@using System.Text
+<div class="section">
+    <h3>Attacks & Counters</h3>
+    <span><InputCheckbox @bind-Value="@HasVeteran" />Veteran</span>
+    <span><InputCheckbox @bind-Value="@HasRampage" />Rampage Soak</span>
+    <span><InputCheckbox @bind-Value="@HasCounterTactics" />Counter Tactics</span>
+    <span># Attacks: <InputNumber @bind-Value="@AttackCount" /></span>
+    @foreach (var attack in attacks)
+    {
+        <span>
+            @foreach (var die in attack.Dice)
+            {
+                <InputSelect @bind-Value="@die.Value">
+                    <option></option>
+                    @foreach (var trait in MacroWriter.Traits)
+                    {
+                        <option>@trait</option>
+                    }
+                    @foreach (var skill in MacroWriter.Skills)
+                    {
+                        <option>@skill</option>
+                    }
+                </InputSelect>
+            }
+            Use Ammo <InputCheckbox @bind-Value="@attack.UseAmmo" />
+        </span>
+    }
+    <textarea readonly>@MacroCode</textarea>
+</div>
+@code {
+    public string MacroCode { get; private set; }
+
+    private bool hasVeteran;
+
+    public bool HasVeteran
+    {
+        get { return hasVeteran; }
+        set
+        {
+            hasVeteran = value;
+            UpdateMacro();
+        }
+    }
+    private bool hasCounterTactics;
+
+    public bool HasCounterTactics
+    {
+        get { return hasCounterTactics; }
+        set
+        {
+            hasCounterTactics = value;
+            UpdateMacro();
+        }
+    }
+
+    private bool hasRampage;
+
+    public bool HasRampage
+    {
+        get { return hasRampage; }
+        set
+        {
+            hasRampage = value;
+            UpdateMacro();
+        }
+    }
+
+    private int attackCount = 1;
+
+    public int AttackCount
+    {
+        get { return attackCount; }
+        set
+        {
+            attackCount = value;
+            UpdateAttacks();
+            UpdateMacro();
+        }
+    }
+
+    private List<Attack> attacks = new();
+
+    public AttackRollsHelper()
+    {
+        UpdateAttacks();
+        UpdateMacro();
+    }
+
+    void UpdateAttacks()
+    {
+        while (attacks.Count < AttackCount)
+        {
+            attacks.Add(new(this, attacks.Count));
+        }
+        while (attacks.Count > AttackCount)
+        {
+            attacks.RemoveAt(attacks.Count - 1);
+        }
+    }
+
+    [MemberNotNull(nameof(MacroCode))]
+    public void UpdateMacro()
+    {
+        var macro = new StringBuilder(MacroWriter.DefaultTemplate);
+        macro.Append("?{Attack");
+        foreach (var attack in attacks)
+        {
+            macro.Append("|");
+            var repeatRow = $"@{{repeating_attacks_${attack.Row}_";
+            macro.Append($"{repeatRow}Attack}},");
+
+            var sb = new StringBuilder();
+            sb.Append("{{Attack=").Append(repeatRow).Append("Attack}}}");
+            foreach (var item in attack.Dice)
+            {
+                if (item.Value != "")
+                {
+                    if (MacroWriter.Traits.Contains(item.Value))
+                    {
+                        sb.Append(MacroWriter.GetTraitCode(item.Value));
+                    }
+                    else
+                    {
+                        sb.Append(MacroWriter.GetSkillCode(item.Value));
+                    }
+                }
+            }
+            if (attack.UseAmmo)
+            {
+                sb.Append("{{Ammo=[[@{repeating_attacks_$").Append(attack.Row).Append("_AttackAmmo}]]}}");
+            }
+            sb.Append("?{Aim/Guard?|No,|Yes,");
+            sb.Append(MacroWriter.Nestify($"{{{{Aim/Guard=[[1d{(HasVeteran ? 12 : 8)}]]}}}}", 1));
+            sb.Append('}');
+            if (HasRampage)
+            {
+                sb.Append("?{Rampage?|No,|Yes,");
+                sb.Append(MacroWriter.Nestify("{{Rampage Soak=[[1d12]]}}", 1));
+                sb.Append("}");
+            }
+            if (HasCounterTactics)
+            {
+                sb.Append("?{Counter Tactics?|No,|Yes,");
+                sb.Append(MacroWriter.Nestify("{{Counter Tactics=[[1d12]]}}", 1));
+                sb.Append("}");
+            }
+            sb.Append("{{Effects=").Append(repeatRow).Append("AttackEffects}}}");
+            macro.Append(sb.ToString().Nestify(1));
+        }
+        macro.Append("}");
+        MacroCode = macro.ToString();
+    }
+
+    class Attack
+    {
+        AttackRollsHelper owner;
+        public List<AttackDie> Dice { get; }
+
+        public Attack(AttackRollsHelper owner, int row)
+        {
+            this.owner = owner;
+            Dice = [new(owner), new(owner), new(owner), new(owner)];
+            this.row = row;
+        }
+
+        private bool useAmmo;
+        public bool UseAmmo
+        {
+            get { return useAmmo; }
+            set
+            {
+                useAmmo = value;
+                owner.UpdateMacro();
+            }
+        }
+
+
+        private int row = 1;
+        public int Row
+        {
+            get { return row; }
+            set
+            {
+                row = value;
+                owner.UpdateMacro();
+            }
+        }
+    }
+
+    class AttackDie
+    {
+        AttackRollsHelper owner;
+
+        public AttackDie(AttackRollsHelper owner)
+        {
+            this.owner = owner;
+        }
+
+        private string _value = "";
+
+        public string Value
+        {
+            get { return _value; }
+            set
+            {
+                _value = value;
+                owner.UpdateMacro();
+            }
+        }
+
+    }
+}

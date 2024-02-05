@@ -1,0 +1,82 @@
+﻿@using System.Diagnostics.CodeAnalysis
+<div class="section">
+    <h3>Basic Roll</h3>
+    Roll Count:
+    <InputNumber @bind-Value="@RollCount" />
+    <span><InputCheckbox DisplayName="Include Opinion" @bind-Value="@IncludeOpinion" /> Include Opinion</span>
+    Other Bonuses
+    <InputTextArea placeholder="@otherPlaceholder" @bind-Value="@OtherBonuses" />
+    <h4>Macro Code</h4>
+    <textarea readonly>@MacroCode</textarea>
+</div>
+
+@code {
+    public string MacroCode { get; private set; }
+
+    public BasicRollHelper()
+    {
+        UpdateMacro();
+    }
+
+    private const string otherPlaceholder = "BonusName,RollCode; each on a new line. Ex:\nLocal Knowledge,[[1d12]]\nMedicine,[[1d12]]\netc";
+
+    private int _rollCount = 5;
+    public int RollCount
+    {
+        get { return _rollCount; }
+        set
+        {
+            _rollCount = value;
+            UpdateMacro();
+        }
+    }
+
+    private bool _includeOpinion = true;
+    public bool IncludeOpinion
+    {
+        get { return _includeOpinion; }
+        set
+        {
+            _includeOpinion = value;
+            UpdateMacro();
+        }
+    }
+
+    private string _otherBonuses = "";
+    public string OtherBonuses
+    {
+        get { return _otherBonuses; }
+        set
+        {
+            _otherBonuses = value;
+            UpdateMacro();
+        }
+    }
+
+    [MemberNotNull(nameof(MacroCode))]
+    public void UpdateMacro()
+    {
+        List<(string, string)> bonuses = [];
+
+        if (IncludeOpinion)
+        {
+            for (int i = 4; i <= 12; i += 2)
+            {
+                bonuses.Add(($"Opinion d{i}", $"{{{{Opinion=[[1d{i}]]}}}}"));
+            }
+        }
+
+        foreach (var line in OtherBonuses.Split("\n"))
+        {
+            if (!line.Contains(','))
+            {
+                continue;
+            }
+            var label = line.Substring(0, line.IndexOf(','));
+            var rest = line.Substring(line.IndexOf(',') + 1);
+            bonuses.Add((label, $"{{{{{label}={rest}}}}}"));
+        }
+
+        MacroCode = MacroWriter.GetBasicMacroCode(RollCount, bonuses);
+    }
+}

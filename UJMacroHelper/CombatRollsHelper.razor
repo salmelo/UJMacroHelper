@@ -1,0 +1,147 @@
+﻿@using System.Diagnostics.CodeAnalysis
+@using System.Text
+<div class="section">
+    <h3>Combat Rolls</h3>
+    <h4>Initiative</h4>
+    <span><InputCheckbox @bind-Value="@HasDangerSense" />Danger Sense</span>
+    <textarea readonly>@InitiativeMacro</textarea>
+    <h4>Dodge</h4>
+    <span><InputCheckbox @bind-Value="@HasVeteran" />Veteran</span>
+    <span><InputCheckbox @bind-Value="@HasNoncombatant" />Noncombatant</span>
+    <span><InputCheckbox @bind-Value="@HasCoward" />Coward</span>
+    <span><InputCheckbox @bind-Value="@HasCounterTactics" />Counter Tactics</span>
+    <textarea readonly>@DodgeMacro</textarea>
+    <h4>Rally</h4>
+    <span><InputCheckbox @bind-Value="@HasLeadership" />Leadership</span>
+    <textarea readonly>@RallyMacro</textarea>
+    <h4>Soak</h4>
+    <textarea readonly>@SoakMacro</textarea>
+</div>
+@code {
+    public string InitiativeMacro { get; private set; }
+    public string DodgeMacro { get; private set; }
+    public string RallyMacro { get; private set; }
+    public string SoakMacro { get; private set; } 
+        = MacroWriter.DefaultTemplate + MacroWriter.GetTraitCode("Body") + MacroWriter.GetSkillCode("Endurance");
+
+    private bool hasDangerSense;
+
+    public bool HasDangerSense
+    {
+        get { return hasDangerSense; }
+        set
+        {
+            hasDangerSense = value;
+            UpdateMacros();
+        }
+    }
+    private bool hasVeteran;
+
+    public bool HasVeteran
+    {
+        get { return hasVeteran; }
+        set
+        {
+            hasVeteran = value;
+            UpdateMacros();
+        }
+    }
+    private bool hasNoncombatant;
+
+    public bool HasNoncombatant
+    {
+        get { return hasNoncombatant; }
+        set
+        {
+            hasNoncombatant = value;
+            UpdateMacros();
+        }
+    }
+    private bool hasCoward;
+
+    public bool HasCoward
+    {
+        get { return hasCoward; }
+        set
+        {
+            hasCoward = value;
+            UpdateMacros();
+        }
+    }
+    private bool hasCounterTactics;
+
+    public bool HasCounterTactics
+    {
+        get { return hasCounterTactics; }
+        set
+        {
+            hasCounterTactics = value;
+            UpdateMacros();
+        }
+    }
+    private bool hasLeadership;
+
+    public bool HasLeadership
+    {
+        get { return hasLeadership; }
+        set
+        {
+            hasLeadership = value;
+            UpdateMacros();
+        }
+    }
+
+    public CombatRollsHelper()
+    {
+        UpdateMacros();
+    }
+
+    [MemberNotNull(nameof(InitiativeMacro), nameof(DodgeMacro), nameof(RallyMacro))]
+    public void UpdateMacros()
+    {
+        var sb = new StringBuilder(MacroWriter.DefaultTemplate);
+        sb.Append(MacroWriter.GetTraitCode("Mind"));
+        sb.Append(MacroWriter.GetSkillCode("Observation"));
+        if (HasDangerSense) { sb.Append("{{Danger Sense=[[1d12]]}}"); }
+        InitiativeMacro = sb.ToString();
+
+        sb.Clear();
+        sb.Append(MacroWriter.DefaultTemplate);
+        sb.Append(MacroWriter.GetTraitCode("Will"));
+        sb.Append(MacroWriter.GetSkillCode("Tactics"));
+        if (HasLeadership) { sb.Append("{{Leadership=[[1d12]]}}"); }
+        RallyMacro = sb.ToString();
+
+        sb.Clear();
+        sb.Append(MacroWriter.DefaultTemplate);
+        sb.Append(MacroWriter.GetTraitCode("Speed"));
+        sb.Append(MacroWriter.GetSkillCode("Evasion"));
+        sb.Append("?{Range?");
+        foreach (var (range, die) in (IEnumerable<(string,string)>)
+                                    [("Close", ""), ("Near", ""), ("Short", "[[d8]]")
+                                    , ("Medium", "[[d12]]"), ("Long", "[[d12]] [[d12]]")])
+        {
+            var code = die == "" ? "" :
+                        MacroWriter.Nestify($"{{{{Range={die}}}}}", 1);
+            sb.Append($"|{range},{code}");
+        }
+        sb.Append("}");
+        sb.Append("?{Guard?|No,|Yes,");
+        sb.Append(MacroWriter.Nestify($"{{{{Guard=[[1d{(HasVeteran ? 12 : 8)}]]}}}}", 1));
+        sb.Append('}');
+        if (HasCoward)
+        {
+            sb.Append("?{Panicked?|No,|Yes,");
+            sb.Append(MacroWriter.Nestify("{{Coward=[[1d12]]}}", 1));
+            sb.Append("}");
+        }
+        if (HasCounterTactics)
+        {
+            sb.Append("?{Counter Tactics?|No,|Yes,");
+            sb.Append(MacroWriter.Nestify("{{Counter Tactics=[[1d12]]}}", 1));
+            sb.Append("}");
+        }
+        if (HasNoncombatant) { sb.Append("{{Noncombatant=[[1d12]]}}"); }
+        DodgeMacro = sb.ToString();
+    }
+}
