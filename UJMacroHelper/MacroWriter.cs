@@ -131,4 +131,62 @@ public static class MacroWriter
         sb.Append("}}");
         return sb.ToString();
     }
+
+    public static string NestifyMacro(this ReadOnlySpan<char> code)
+    {
+        var sb = new StringBuilder();
+        var callDepth = 0;
+        var queryDepth = 0;
+        var openCount = 0;
+        bool lastCall = false;
+        bool lastQuery = false;
+
+        foreach (var c in code)
+        {
+            string add = $"{c}";
+            switch (c)
+            {
+                case '@' or '%' or '^':
+                    lastCall = true;
+                    break;
+                case '?':
+                    lastQuery = true;
+                    break;
+                case '{':
+                    openCount++;
+                    if (lastCall)
+                    {
+                        callDepth++;
+                    }
+                    if (lastQuery)
+                    {
+                        queryDepth++;
+                    }
+                    goto default;
+                case '|' or ',':
+                    add = Nestify(c, queryDepth - 1);
+                    goto default;
+                case '}':
+                    openCount = Math.Max(openCount - 1, 0);
+                    if (callDepth > 0)
+                    {
+                        callDepth--;
+                        goto default;
+                    }
+                    
+                    if (queryDepth > openCount)
+                    {
+                        queryDepth--;
+                    }
+                    add = Nestify(c, queryDepth);
+                    goto default;
+                default:
+                    lastCall = false;
+                    lastQuery = false;
+                    break;
+            }
+            sb.Append(add);
+        }
+        return sb.ToString();
+    }
 }
