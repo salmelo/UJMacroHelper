@@ -189,4 +189,6 @@ public static class MacroWriter
         }
         return sb.ToString();
     }
+
+    public static string NestifyMacro(this string code) => NestifyMacro((ReadOnlySpan<char>)code);
 }

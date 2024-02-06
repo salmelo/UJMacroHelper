@@ -1,0 +1,129 @@
+﻿@using System.Text
+<div class="section">
+    <h3>Generic Rolls</h3>
+    <span>
+        @foreach (var die in dice)
+        {
+            <InputSelect @bind-Value="@die.Value">
+                <option></option>
+                @foreach (var trait in MacroWriter.Traits)
+                {
+                    <option>@trait</option>
+                }
+                @foreach (var skill in MacroWriter.Skills)
+                {
+                    <option>@skill</option>
+                }
+            </InputSelect>
+        }
+    </span>
+    <h4>Passive Bonuses</h4>
+    <InputTextArea placeholder="@otherPlaceholder" @bind-Value="@PassiveBonuses" />
+    <h4>Conditional Bonuses</h4>
+    <InputTextArea placeholder="@otherPlaceholder" @bind-Value="@ConditionalBonuses" />
+    <h4>Macro</h4>
+    <textarea readonly>@macroCode</textarea>
+</div>
+@code {
+    private const string otherPlaceholder = "BonusName,RollCode; each on a new line. Ex:\nLocal Knowledge,[[1d12]]\nMedicine,[[1d12]]\netc";
+
+    List<Die> dice;
+    string macroCode = "";
+
+    private string passiveBonuses = "";
+
+    public string PassiveBonuses
+    {
+        get { return passiveBonuses; }
+        set
+        {
+            passiveBonuses = value;
+            UpdateMacro();
+        }
+    }
+    private string conditionalBonuses = "";
+
+    public string ConditionalBonuses
+    {
+        get { return conditionalBonuses; }
+        set
+        {
+            conditionalBonuses = value;
+            UpdateMacro();
+        }
+    }
+
+
+    public GenericRollHelper()
+    {
+        dice = [new(this), new(this), new(this), new(this)];
+    }
+
+    void UpdateMacro()
+    {
+        var sb = new StringBuilder(MacroWriter.DefaultTemplate);
+        foreach (var item in dice)
+        {
+            if (item.Value != "")
+            {
+                if (MacroWriter.Traits.Contains(item.Value))
+                {
+                    sb.Append(MacroWriter.GetTraitCode(item.Value));
+                }
+                else
+                {
+                    sb.Append(MacroWriter.GetSkillCode(item.Value));
+                }
+            }
+        }
+
+        foreach (var (label, rest) in SplitBonuses(PassiveBonuses))
+        {
+            sb.Append($"{{{{{label}={rest}}}}}");
+        }
+
+        foreach (var (label, rest) in SplitBonuses(ConditionalBonuses))
+        {
+            sb.Append($"?{{{label}?|No,|Yes,{{{{{label}={rest}}}}}}}");
+        }
+
+        macroCode = sb.ToString().NestifyMacro();
+    }
+
+    IEnumerable<(string label, string rest)> SplitBonuses(string list)
+    {
+        foreach (var line in list.Split("\n"))
+        {
+            if (!line.Contains(','))
+            {
+                continue;
+            }
+            var label = line.Substring(0, line.IndexOf(','));
+            var rest = line.Substring(line.IndexOf(',') + 1);
+            yield return (label, rest);
+        }
+    }
+
+    class Die
+    {
+        GenericRollHelper owner;
+
+        public Die(GenericRollHelper owner)
+        {
+            this.owner = owner;
+        }
+
+        private string _value = "";
+
+        public string Value
+        {
+            get { return _value; }
+            set
+            {
+                _value = value;
+                owner.UpdateMacro();
+            }
+        }
+
+    }
+}
