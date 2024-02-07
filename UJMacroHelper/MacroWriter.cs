@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace UJMacroHelper;
@@ -20,10 +21,10 @@ public static class MacroWriter
 
         void NestQuery(string label, string value, int maxNest, int nestLevel)
         {
-            macro.Append(Nestify('|', nestLevel));
+            macro.Append('|');
             macro.Append(label);
-            macro.Append(Nestify(',', nestLevel));
-            macro.Append(Nestify(value, nestLevel + 1));
+            macro.Append(',');
+            macro.Append(value);
             if (nestLevel < maxNest)
             {
                 NestMacro(maxNest, nestLevel + 1);
@@ -35,7 +36,7 @@ public static class MacroWriter
             macro.Append($"?{{Roll{rollNumber + 1}");
             if (rollNumber > 0)
             {
-                macro.Append(Nestify('|', nestLevel));
+                macro.Append('|');
             }
 
             foreach (var trait in Traits)
@@ -57,7 +58,7 @@ public static class MacroWriter
                 NestQuery(label, value, maxNest, nestLevel);
             }
 
-            macro.Append(Nestify('}', nestLevel));
+            macro.Append('}');
         }
 
         for (var i = 0; i < rollCount; i++)
@@ -65,8 +66,7 @@ public static class MacroWriter
             NestMacro(0, 0, i);
         }
 
-        return macro.ToString();
-
+        return macro.ToString().NestifyMacro();
     }
 
     public static string GetTraitCode(string trait) => $$$$"""
@@ -164,7 +164,14 @@ public static class MacroWriter
                     }
                     goto default;
                 case '|' or ',':
-                    add = Nestify(c, queryDepth - 1);
+                    if (openCount > queryDepth)
+                    {
+                        add = Nestify(c, queryDepth);
+                    }
+                    else
+                    {
+                        add = Nestify(c, queryDepth - 1);
+                    }
                     goto default;
                 case '}':
                     openCount = Math.Max(openCount - 1, 0);
@@ -173,7 +180,7 @@ public static class MacroWriter
                         callDepth--;
                         goto default;
                     }
-                    
+
                     if (queryDepth > openCount)
                     {
                         queryDepth--;
