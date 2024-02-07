@@ -62,7 +62,7 @@
         {
             for (int i = 4; i <= 12; i += 2)
             {
-                bonuses.Add(($"Opinion d{i}", $"{{{{Opinion=[[1d{i}]]}}}}"));
+                bonuses.Add(($"Opinion d{i}", $"{{{{Opinion d{i}s={MacroWriter.GetRepeatCountQuery($"Opinion d{i}s",$"[[1d{i}]]",4)}}}}}"));
             }
         }
 

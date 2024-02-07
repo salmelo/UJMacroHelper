@@ -50,8 +50,8 @@ public static class MacroWriter
                 NestQuery(skill, code, maxNest, nestLevel);
             }
 
-            NestQuery("Assist", $"{{{{Assist {rollNumber + 1}=[[1d8]]}}}}", maxNest, nestLevel);
-            NestQuery("Assist (Team Player)", $"{{{{Assist {rollNumber + 1}=[[1d12]]}}}}", maxNest, nestLevel);
+            NestQuery("Assist", $"{{{{Assist={GetRepeatCountQuery("Assist d8s", "[[1d8]]", 4)}}}}}", maxNest, nestLevel);
+            NestQuery("Assist (Team Player)", $"{{{{Assist (TP)={GetRepeatCountQuery("Assist d12s", "[[1d12]]", 4)}}}}}", maxNest, nestLevel);
 
             foreach (var (label, value) in bonuses!)
             {
@@ -136,60 +136,65 @@ public static class MacroWriter
     {
         var sb = new StringBuilder();
         var callDepth = 0;
-        var queryDepth = 0;
-        var openCount = 0;
-        bool lastCall = false;
-        bool lastQuery = false;
 
-        foreach (var c in code)
+        bool lastWasCall = false;
+        bool lastWasQuery = false;
+
+        var opens = new Stack<int>();
+        var queries = new Stack<int>();
+
+        for (int i = 0; i < code.Length; i++)
         {
+            var c = code[i];
             string add = $"{c}";
             switch (c)
             {
                 case '@' or '%' or '^':
-                    lastCall = true;
+                    lastWasCall = true;
                     break;
                 case '?':
-                    lastQuery = true;
+                    lastWasQuery = true;
                     break;
                 case '{':
-                    openCount++;
-                    if (lastCall)
+                    opens.Push(i);
+                    if (lastWasCall)
                     {
                         callDepth++;
                     }
-                    if (lastQuery)
+                    if (lastWasQuery)
                     {
-                        queryDepth++;
+                        queries.Push(i);
                     }
                     goto default;
                 case '|' or ',':
-                    if (openCount > queryDepth)
+                    if (opens.Peek() > queries.Peek())
                     {
-                        add = Nestify(c, queryDepth);
+                        add = Nestify(c, queries.Count);
                     }
                     else
                     {
-                        add = Nestify(c, queryDepth - 1);
+                        add = Nestify(c, queries.Count - 1);
                     }
                     goto default;
                 case '}':
-                    openCount = Math.Max(openCount - 1, 0);
+                    if (opens.TryPop(out var lastOpen)) { }
+                    if (queries.TryPeek(out var lastQuery)) { }
+
                     if (callDepth > 0)
                     {
                         callDepth--;
                         goto default;
                     }
 
-                    if (queryDepth > openCount)
+                    if (lastQuery >= lastOpen)
                     {
-                        queryDepth--;
+                        _ = queries.Pop();
                     }
-                    add = Nestify(c, queryDepth);
+                    add = Nestify(c, queries.Count);
                     goto default;
                 default:
-                    lastCall = false;
-                    lastQuery = false;
+                    lastWasCall = false;
+                    lastWasQuery = false;
                     break;
             }
             sb.Append(add);
@@ -198,4 +203,18 @@ public static class MacroWriter
     }
 
     public static string NestifyMacro(this string code) => NestifyMacro((ReadOnlySpan<char>)code);
+
+    public static string GetRepeatCountQuery(string query, string code, int maxCount)
+    {
+        var sb = new StringBuilder($"?{{{query}");
+
+        for (int i = 0; i < maxCount; i++)
+        {
+            sb.Append($"|{i + 1},");
+            sb.Append(string.Join(" ", Enumerable.Repeat(code, i + 1)));
+        }
+        sb.Append('}');
+
+        return sb.ToString();
+    }
 }
