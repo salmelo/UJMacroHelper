@@ -3,7 +3,7 @@
     <h3>Basic Roll</h3>
     Roll Count:
     <InputNumber @bind-Value="@RollCount" />
-    <span><InputCheckbox DisplayName="Include Opinion" @bind-Value="@IncludeOpinion" /> Include Opinion</span>
+    <label><InputCheckbox DisplayName="Include Opinion" @bind-Value="@IncludeOpinion" /> Include Opinion</label>
     Other Bonuses
     <InputTextArea placeholder="@otherPlaceholder" @bind-Value="@OtherBonuses" />
     <h4>Macro Code</h4>
@@ -53,6 +53,11 @@
         }
     }
 
+    [Parameter]
+    public bool UseSelected { get; set; }
+    protected override void OnParametersSet() => UpdateMacro();
+
+
     [MemberNotNull(nameof(MacroCode))]
     public void UpdateMacro()
     {
@@ -78,5 +83,9 @@
         }
 
         MacroCode = MacroWriter.GetBasicMacroCode(RollCount, bonuses);
+        if (UseSelected)
+        {
+            MacroCode = MacroCode.UseSelected();
+        }
     }
 }

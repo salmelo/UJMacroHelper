@@ -54,10 +54,15 @@
     }
 
 
+    [Parameter]
+    public bool UseSelected { get; set; }
+    protected override void OnParametersSet() => UpdateMacro();
+
     public GenericRollHelper()
     {
         dice = [new(this), new(this), new(this), new(this)];
     }
+
 
     void UpdateMacro()
     {
@@ -87,7 +92,12 @@
             sb.Append($"?{{{label}?|No,|Yes,{{{{{label}={rest}}}}}}}");
         }
 
+        //System.Diagnostics.Debugger.Break();
         macroCode = sb.ToString().NestifyMacro();
+        if (UseSelected)
+        {
+            macroCode = macroCode.UseSelected();
+        }
     }
 
     IEnumerable<(string label, string rest)> SplitBonuses(string list)

@@ -2,9 +2,9 @@
 @using System.Text
 <div class="section">
     <h3>Attacks & Counters</h3>
-    <span><InputCheckbox @bind-Value="@HasVeteran" />Veteran</span>
-    <span><InputCheckbox @bind-Value="@HasRampage" />Rampage Soak</span>
-    <span><InputCheckbox @bind-Value="@HasCounterTactics" />Counter Tactics</span>
+    <label><InputCheckbox @bind-Value="@HasVeteran" />Veteran</label>
+    <label><InputCheckbox @bind-Value="@HasRampage" />Rampage Soak</label>
+    <label><InputCheckbox @bind-Value="@HasCounterTactics" />Counter Tactics</label>
     <span># Attacks: <InputNumber @bind-Value="@AttackCount" /></span>
     @foreach (var attack in attacks)
     {
@@ -23,7 +23,7 @@
                     }
                 </InputSelect>
             }
-            Use Ammo <InputCheckbox @bind-Value="@attack.UseAmmo" />
+            <label>Use Ammo <InputCheckbox @bind-Value="@attack.UseAmmo" /></label>
         </span>
     }
     <h4>Macro</h4>
@@ -81,6 +81,10 @@
     }
 
     private List<Attack> attacks = new();
+
+    [Parameter]
+    public bool UseSelected { get; set; }
+    protected override void OnParametersSet() => UpdateMacro();
 
     public AttackRollsHelper()
     {
@@ -150,7 +154,11 @@
             macro.Append(sb.ToString().Nestify(1));
         }
         macro.Append("}");
-        MacroCode = macro.ToString();
+        MacroCode = macro.ToString(); 
+        if (UseSelected)
+        {
+            MacroCode = MacroCode.UseSelected();
+        }
     }
 
     class Attack

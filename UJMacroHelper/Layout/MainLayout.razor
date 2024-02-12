@@ -13,8 +13,16 @@
     @Body
     </article>
     </main> *@
-    <BasicRollHelper />
-    <CombatRollsHelper />
-    <AttackRollsHelper />
-    <GenericRollHelper/>
+    <BasicRollHelper UseSelected="@UseSelected" />
+    <CombatRollsHelper UseSelected="@UseSelected" />
+    <AttackRollsHelper UseSelected="@UseSelected" />
+    <GenericRollHelper UseSelected="@UseSelected" />
+    <label>
+        Use Selected
+        <InputCheckbox @bind-Value="@UseSelected" />
+    </label>
 </div>
+
+@code {
+    public bool UseSelected { get; set; }
+}

@@ -3,16 +3,16 @@
 <div class="section">
     <h3>Combat Rolls</h3>
     <h4>Initiative</h4>
-    <span><InputCheckbox @bind-Value="@HasDangerSense" />Danger Sense</span>
+    <label><InputCheckbox @bind-Value="@HasDangerSense" />Danger Sense</label>
     <textarea readonly>@InitiativeMacro</textarea>
     <h4>Dodge</h4>
-    <span><InputCheckbox @bind-Value="@HasVeteran" />Veteran</span>
-    <span><InputCheckbox @bind-Value="@HasNoncombatant" />Noncombatant</span>
-    <span><InputCheckbox @bind-Value="@HasCoward" />Coward</span>
-    <span><InputCheckbox @bind-Value="@HasCounterTactics" />Counter Tactics</span>
+    <label><InputCheckbox @bind-Value="@HasVeteran" />Veteran</label>
+    <label><InputCheckbox @bind-Value="@HasNoncombatant" />Noncombatant</label>
+    <label><InputCheckbox @bind-Value="@HasCoward" />Coward</label>
+    <label><InputCheckbox @bind-Value="@HasCounterTactics" />Counter Tactics</label>
     <textarea readonly>@DodgeMacro</textarea>
     <h4>Rally</h4>
-    <span><InputCheckbox @bind-Value="@HasLeadership" />Leadership</span>
+    <label><InputCheckbox @bind-Value="@HasLeadership" />Leadership</label>
     <textarea readonly>@RallyMacro</textarea>
     <h4>Soak</h4>
     <textarea readonly>@SoakMacro</textarea>
@@ -91,6 +91,11 @@
         }
     }
 
+    [Parameter]
+    public bool UseSelected { get; set; }
+    protected override void OnParametersSet() => UpdateMacros();
+
+
     public CombatRollsHelper()
     {
         UpdateMacros();
@@ -104,6 +109,10 @@
         sb.Append(MacroWriter.GetSkillCode("Observation"));
         if (HasDangerSense) { sb.Append("{{Danger Sense=[[1d12]]}}"); }
         InitiativeMacro = sb.ToString();
+        if (UseSelected)
+        {
+            InitiativeMacro = InitiativeMacro.UseSelected();
+        }
 
         sb.Clear();
         sb.Append(MacroWriter.DefaultTemplate);
@@ -111,6 +120,10 @@
         sb.Append(MacroWriter.GetSkillCode("Tactics"));
         if (HasLeadership) { sb.Append("{{Leadership=[[1d12]]}}"); }
         RallyMacro = sb.ToString();
+        if (UseSelected)
+        {
+            RallyMacro = RallyMacro.UseSelected();
+        }
 
         sb.Clear();
         sb.Append(MacroWriter.DefaultTemplate);
@@ -143,5 +156,9 @@
         }
         if (HasNoncombatant) { sb.Append("{{Noncombatant=[[1d12]]}}"); }
         DodgeMacro = sb.ToString();
+        if (UseSelected)
+        {
+            DodgeMacro = DodgeMacro.UseSelected();
+        }
     }
 }

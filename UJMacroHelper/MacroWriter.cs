@@ -9,7 +9,12 @@ public static class MacroWriter
     public const string DefaultTemplate = "&{template:default} {{name=@{character_name}}}";
 
     public static ImmutableArray<string> Traits { get; } = ["Mind", "Body", "Speed", "Will"];
-    public static ImmutableArray<string> SkillDice { get; } = ["Species", "Type", "Career", "Expert"];
+    public static ImmutableArray<(string name, string label)> SkillDice { get; } = [
+        ("Species", "@{SpeciesName}"),
+        ("Type", "@{TypeName}"),
+        ("Career", "@{CareerName}"),
+        ("Expert", "Expert")
+        ];
     public static ImmutableArray<string> Skills { get; } = ["Academics", "Athletics", "Craft", "Deceit", "Endurance", "Evasion", "Fighting", "Negotiation", "Observation", "Presence", "Questioning", "Shooting", "Tactics", "Transport"];
 
     public static string GetBasicMacroCode(int rollCount = 1, IEnumerable<(string label, string value)>? bonuses = null)
@@ -122,10 +127,10 @@ public static class MacroWriter
                     """);
         var skillValue = skill is "Academics" or "Athletics"
           ? skill.Substring(0, skill.Length - 1) : skill;
-        foreach (var die in SkillDice)
+        foreach (var (die, label) in SkillDice)
         {
             sb.Append($$$$"""
-                      [[{{@{{{{{skillValue}}}}{{{{die}}}}}}[{{{{die}}}}],0d0}kh1]] 
+                      [[{{@{{{{{skillValue}}}}{{{{die}}}}}}[{{{{label}}}}],0d0}kh1]] 
                       """);
         }
         sb.Append("}}");
@@ -147,6 +152,10 @@ public static class MacroWriter
         {
             var c = code[i];
             string add = $"{c}";
+
+            int lastOpen;
+            int lastQuery;
+
             switch (c)
             {
                 case '@' or '%' or '^':
@@ -167,7 +176,11 @@ public static class MacroWriter
                     }
                     goto default;
                 case '|' or ',':
-                    if (opens.Peek() > queries.Peek())
+
+                    if (!opens.TryPeek(out lastOpen)) { lastOpen = -1; }
+                    if (!queries.TryPeek(out lastQuery)) { lastQuery =  -1; }
+
+                    if (lastOpen > lastQuery)
                     {
                         add = Nestify(c, queries.Count);
                     }
@@ -177,8 +190,8 @@ public static class MacroWriter
                     }
                     goto default;
                 case '}':
-                    if (opens.TryPop(out var lastOpen)) { }
-                    if (queries.TryPeek(out var lastQuery)) { }
+                    if (opens.TryPop(out lastOpen)) { }
+                    if (queries.TryPeek(out lastQuery)) { }
 
                     if (callDepth > 0)
                     {
@@ -217,4 +230,6 @@ public static class MacroWriter
 
         return sb.ToString();
     }
+
+    public static string UseSelected(this string code) => code.Replace("@{", "@{selected|");
 }
