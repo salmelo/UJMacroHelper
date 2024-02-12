@@ -3,6 +3,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    flex-wrap: wrap;
 }
 
 main[b-nydt9jdipz] {

@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UJMacroHelper",
   "resources": {
-    "hash": "sha256-sGOqzvXOQ1Q7/9kbQVZi1FllF9g4vF69TxNEXpTbPJM=",
+    "hash": "sha256-MbjJbKITC2KDbnTJkeN2SIi16hhvCOfeOxDpuI39mEg=",
     "jsModuleNative": {
       "dotnet.native.8.0.1.dppluywef1.js": "sha256-fwQoiFwWnpW1nLcyHmX+s5xBEvmhoBgeTrlEwh6Wzms="
     },
@@ -9,7 +9,7 @@
       "dotnet.runtime.8.0.1.rswtxkdyko.js": "sha256-HZOoaGpz9ekMa/oSmeApSKp3DXNdVUq2UBqsTIIiN8A="
     },
     "wasmNative": {
-      "dotnet.native.wasm": "sha256-xlr/c+1+Sko1ihhJ3DEyVyO9msC9PyAuaKNqb+2Ue1U="
+      "dotnet.native.wasm": "sha256-0cearx6uBY7BLwTKmEHqk2u0nkZJ2TySBWSbEBTnlUI="
     },
     "icu": {
       "icudt_CJK.dat": "sha256-SZLtQnRc0JkwqHab0VUVP7T3uBPSeYzxzDnpxPpUnHk=",
@@ -59,7 +59,7 @@
       "System.Text.Json.wasm": "sha256-FsRPIhYub2tKfQQXWl3sKmTIJ1miHISOm6faW9DNkTA=",
       "System.Text.RegularExpressions.wasm": "sha256-SF1va0IxfGJ3AA3qhrKGjOXkDJXyHt+5Fi280JM2JtY=",
       "System.wasm": "sha256-VcEDE6pOk70XKMQ28ZpXByBb3BywZlGf2e3G/xiAMhI=",
-      "UJMacroHelper.wasm": "sha256-SquoNYboTKb3qWvBsE8tzqabOokGw3IJJ/D+FpkfBs0="
+      "UJMacroHelper.wasm": "sha256-ZHsqkSZO0PjBhebnVZtyRq29qz46NlPPMfK06qM5oUs="
     }
   },
   "cacheBootResources": true,
