@@ -231,5 +231,5 @@ public static class MacroWriter
         return sb.ToString();
     }
 
-    public static string UseSelected(this string code) => code.Replace("@{", "@{selected|");
+    public static string UseSelected(this string code) => code.Replace("@{", "@{selected|").Replace("character_name","token_name");
 }

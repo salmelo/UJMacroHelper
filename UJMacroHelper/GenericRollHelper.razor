@@ -1,6 +1,6 @@
 ﻿@using System.Text
 <div class="section">
-    <h3>Generic Rolls</h3>
+    <h3>Frequent Rolls</h3>
     <span>
         @foreach (var die in dice)
         {
@@ -30,7 +30,7 @@
     List<Die> dice;
     string macroCode = "";
 
-    private string passiveBonuses = "";
+    private string passiveBonuses = "Personality: ,[[d12]]";
 
     public string PassiveBonuses
     {
