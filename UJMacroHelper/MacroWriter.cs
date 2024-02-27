@@ -17,9 +17,17 @@ public static class MacroWriter
         ];
     public static ImmutableArray<string> Skills { get; } = ["Academics", "Athletics", "Craft", "Deceit", "Endurance", "Evasion", "Fighting", "Negotiation", "Observation", "Presence", "Questioning", "Shooting", "Tactics", "Transport"];
 
-    public static string GetBasicMacroCode(int rollCount = 1, IEnumerable<(string label, string value)>? bonuses = null)
+    public static string GetBasicMacroCode(int rollCount = 1, IEnumerable<(string label, string value)>? bonuses = null, bool nestify = true)
     {
         if (rollCount < 1) { return ""; }
+        
+        var macro = GetBasicMacroStringBuilder(rollCount, bonuses);
+        return nestify ? macro.ToString().NestifyMacro() : macro.ToString();
+    }
+
+    public static StringBuilder GetBasicMacroStringBuilder(int rollCount = 1, IEnumerable<(string label, string value)>? bonuses = null)
+    {
+        if (rollCount < 1) { return new(); }
         bonuses ??= [];
 
         var macro = new StringBuilder(DefaultTemplate);
@@ -70,8 +78,7 @@ public static class MacroWriter
         {
             NestMacro(0, 0, i);
         }
-
-        return macro.ToString().NestifyMacro();
+        return macro;
     }
 
     public static string GetTraitCode(string trait) => $$$$"""

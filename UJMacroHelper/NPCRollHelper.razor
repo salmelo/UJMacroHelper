@@ -1,0 +1,135 @@
+﻿@using System.Text
+<div class="section">
+    <h3>Simple NPC Roll</h3>
+    <span>
+        <InputSelect @bind-Value="@Tier">
+            @foreach (var (tier, _) in tiers)
+            {
+                <option>@tier</option>
+            }
+        </InputSelect>
+        <InputSelect @bind-Value="@Type">
+            @foreach (var type in Data.Types)
+            {
+                <option>@type.Name</option>
+            }
+        </InputSelect>
+        <InputSelect @bind-Value="@Species">
+            @foreach (var type in Data.Species)
+            {
+                <option>@type.Name</option>
+            }
+        </InputSelect>
+        <InputSelect @bind-Value="@Career">
+            @foreach (var type in Data.Careers)
+            {
+                <option>@type.Name</option>
+            }
+        </InputSelect>
+    </span>
+    <textarea readonly>@MacroCode</textarea>
+</div>
+@code {
+    [Parameter]
+    public bool UseSelected { get; set; }
+    protected override void OnParametersSet() => UpdateMacro();
+
+    public string MacroCode { get; private set; } = "";
+
+    private string _tier = "Typical";
+    public string Tier
+    {
+        get { return _tier; }
+        set
+        {
+            _tier = value;
+            UpdateMacro();
+        }
+    }
+
+    private string _type = "";
+    public string Type
+    {
+        get { return _type; }
+        set
+        {
+            _type = value;
+            UpdateMacro();
+        }
+    }
+
+    private string _species = "";
+    public string Species
+    {
+        get { return _species; }
+        set
+        {
+            _species = value;
+            UpdateMacro();
+        }
+    }
+
+    private string _career = "";
+    public string Career
+    {
+        get { return _career; }
+        set
+        {
+            _career = value;
+            UpdateMacro();
+        }
+    }
+
+    IEnumerable<(string Name, string Die)> tiers = [("Typical", "d6"), ("Elite", "d8"), ("Superior", "d10"), ("Ultimate", "d12")];
+
+    public NPCRollHelper()
+    {
+        UpdateMacro();
+    }
+
+    void UpdateMacro()
+    {
+        var species = Data.Species.FirstOrDefault(s => s.Name == Species);
+        var career = Data.Careers.FirstOrDefault(c => c.Name == Career);
+        var type = Data.Types.FirstOrDefault(t => t.Name == Type);
+        var die = tiers.FirstOrDefault(t => t.Name == Tier).Die;
+
+        IEnumerable<(string, string)> bonuses = [.. ((IEnumerable<string>)[.. species.Gifts, .. type.Gifts, .. career.Gifts])
+                                                    .Where(Data.ConditionalD12s.Contains).Select(g => (g, $"{{{{{g}=[[d12]]}}}}")),
+            ("Local Knowledge", "{{Local Knowledge=[[d12]]}}")];
+
+        var macro = MacroWriter.GetBasicMacroStringBuilder(5, bonuses);
+        macro.Replace("@{character_name}", UseSelected ? 
+            "@{selected|token_name}" :
+            $"{(type.Name == "" ? "" : type.Name + " ")}{species.Name} {career.Name}");
+
+        foreach (var trait in MacroWriter.Traits)
+        {
+            macro.Replace($"@{{{trait}}}", die);
+        }
+        foreach (var (trait, label) in MacroWriter.SkillDice)
+        {
+            var traitData = trait switch
+            {
+                "Career" => career,
+                "Type" => type,
+                "Species" => species,
+                _ => (Name: "Expert", Skills: [], Gifts: [])
+            };
+
+            if (label.StartsWith('@'))
+            {
+                macro.Replace(label, traitData.Name);
+            }
+
+            foreach (var skill in MacroWriter.Skills)
+            {
+                var skillName = skill is "Academics" or "Athletics" ? skill.Substring(0, skill.Length - 1) : skill;
+                var skillDie = traitData.Skills.Contains(skill) ? die : "-1";
+                macro.Replace($"@{{{skillName}{trait}}}", skillDie);
+            }
+        }
+
+        MacroCode = macro.ToString().NestifyMacro();
+    }
+}
